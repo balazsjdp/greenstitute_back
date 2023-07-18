@@ -16,6 +16,10 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
+            $table->string('company_name');
+            $table->string('company_address');
+            $table->string('company_id')->unique();
+            $table->string('company_tax_number')->unique();
             $table->timestamps();
         });
     }
