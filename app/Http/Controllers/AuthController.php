@@ -86,7 +86,7 @@ class AuthController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function userProfile() {
-        return response()->json(auth()->user());
+        return response()->json(auth()->user()->load('certificationRequest'));
     }
     /**
      * Get the token array structure.
@@ -97,10 +97,14 @@ class AuthController extends Controller
      */
     protected function createNewToken($token){
         return response()->json([
-            'access_token' => $token,
+            'authToken' => $token,
             'token_type' => 'bearer',
             'expires_in' => auth()->factory()->getTTL() * 60,
-            'user' => auth()->user()
         ]);
+    }
+
+    protected function checkToken()
+    {
+        return response()->json(['valid' => true]);
     }
 }
