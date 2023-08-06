@@ -24,6 +24,7 @@ Route::group([
     Route::post('/refresh', [AuthController::class, 'refresh']);
     Route::get('/user-profile', [AuthController::class, 'userProfile']);    
     Route::get('/check-token', [AuthController::class, 'checkToken']);
+    Route::get('/user-profile/{id}', [AuthController::class, 'userProfileById']);
 });
 
 Route::group([
@@ -34,4 +35,5 @@ Route::group([
     Route::post('/certDocumentsUpload', [CertificationController::class, 'uploadDocuments']);
     Route::get('/queryCert', [CertificationController::class, 'query']);
     Route::get('/hasCertRequest', [CertificationController::class, 'userRequestedCert']);
+    Route::get('/all', [CertificationController::class, 'all']);
 });

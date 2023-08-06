@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('company_address');
             $table->string('company_id')->unique();
             $table->string('company_tax_number')->unique();
+            $table->boolean('is_admin')->default(false);
             $table->timestamps();
         });
     }

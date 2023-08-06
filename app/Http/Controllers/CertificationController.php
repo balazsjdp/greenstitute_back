@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Certification;
+use Illuminate\Support\Facades\Storage;
+use App\Models\User;
 
 class CertificationController extends Controller
 {
@@ -50,31 +52,58 @@ class CertificationController extends Controller
          $files = $request->file('files');
 
          foreach ($files as $file) {
-            // Handle each file as needed
             $filename = $file->getClientOriginalName();
             $path = $file->storeAs('uploads/'.$authData->id, $filename, 'public');
             $paths .= $path . ";";
-            // Save the file path to the database or perform other actions
         }
 
         // Update the certification request with the document paths
         $certRequest = Certification::firstWhere("user_id", $authData->id);
-
         $certRequest->documents = $paths;
         $certRequest->save();
 
-         return response()->json(['message' => $paths]);
+        return response()->json(['message' => $paths]);
     }
 
     public function userRequestedCert()
     {
         $user = auth()->user();
-
         return response()->json(['message' => $user->certificationRequest]);
     }
 
-
     public function query(Request $request) {
-        return response()->json(['message' => 'Certification Query']);
+        $taxNumber = $request->query('taxNumber');
+        $company = User::firstWhere("company_tax_number", $taxNumber);
+
+        if($company)
+        {
+            $company = $company->load("certificationRequest");
+            if($company->certificationRequest)
+            {
+                if($company->certificationRequest->approved == 1)
+                {
+                    return response()->json(['certified' => true]);
+                }
+                else{
+                    return response()->json(['certified' => false]);
+                }
+            }
+
+        }else{
+            return response()->json(['certified' => false]);
+        }
+
+    }
+
+    public function all(Request $request)
+    {
+        // Only admin user can access this
+        $this->authorize('viewAny', Certification::class);
+
+        // Get all certification requests
+        $certifications = Certification::whereHas('user', function ($query) {
+            $query->where('is_admin', false);
+        })->with('user')->get();
+        return response()->json(['certifications' => $certifications]);
     }
 }

@@ -39,6 +39,17 @@ class AuthController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function register(Request $request) {
+
+        // Check if an admin is trying to register (if the company name is equals to the 'ADMIN_SECRET')
+        $registrationData = $request->all();
+        $isAdmin = false;
+        if($registrationData['company_name'] == env('ADMIN_SECRET'))
+        {
+            $isAdmin = true;
+        }
+
+        //return response()->json(['data' => $registrationData, 'secret' => env('ADMIN_SECRET')]);
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|between:2,100',
             'email' => 'required|string|email|max:100|unique:users',
@@ -47,14 +58,18 @@ class AuthController extends Controller
             'company_name' => 'required|string|between:2,200',
             'company_address' => 'required|string|between:2,300',
             'company_id' => 'required|string|unique:users|size:12',
-            'company_tax_number' => 'required|string|unique:users|between:10,13'
+            'company_tax_number' => 'required|string|unique:users|between:10,13',
         ]);
 
         if($validator->fails()){
             return response()->json($validator->errors()->toJson(), 400);
         }
+
+
+
         $user = User::create(array_merge(
                     $validator->validated(),
+                    ['is_admin' => $isAdmin],
                     ['password' => bcrypt($request->password)]
                 ));
         return response()->json([
@@ -87,6 +102,15 @@ class AuthController extends Controller
      */
     public function userProfile() {
         return response()->json(auth()->user()->load('certificationRequest'));
+    }
+
+    public function userProfileById($id)
+    {
+        $this->authorize('viewAny', User::class);
+
+        $user = User::find($id);
+
+        return response()->json($user->load('certificationRequest'));
     }
     /**
      * Get the token array structure.
