@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Certification;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
+use Validator;
 
 class CertificationController extends Controller
 {
@@ -16,7 +17,7 @@ class CertificationController extends Controller
      * @return void
      */
     public function __construct() {
-        $this->middleware('auth:api', ['except' => ['query']]);
+        $this->middleware('auth:api', ['except' => ['query','removeFiles']]);
     }
 
 
@@ -24,6 +25,18 @@ class CertificationController extends Controller
     {
         // Get the users data from the auth token
         $authData = auth()->user();
+
+        $validator = Validator::make($request->all(), [
+            'certificationData.company_type' => 'required',
+            'certificationData.last_closed_year_income' => 'required',
+            'certificationData.enviromental_violation' => 'required',
+            'certificationData.self_cleaning_procedure' => 'required',
+        ]);
+
+        if($validator->fails()){
+            return response()->json($validator->errors()->toJson(), 400);
+        }
+
         // Get the data sent in the request
         $requestData = $request->json()->all();
         $certData = $requestData["certificationData"];
@@ -105,5 +118,62 @@ class CertificationController extends Controller
             $query->where('is_admin', false);
         })->with('user')->get();
         return response()->json(['certifications' => $certifications]);
+    }
+
+    public function approve(Request $request)
+    {
+        $this->authorize('viewAny', Certification::class);
+        $requestData = $request->json()->all();
+        $certId = $requestData['certId'];
+
+        $certificationToApprove = Certification::find($certId);
+        $certificationToApprove->approved = 1;
+        $certificationToApprove->save();
+
+        // Delete uploaded files due to GDPR
+        $this->deleteFolderByUserId($certificationToApprove->user_id);
+
+        return response()->json(['message' => $certificationToApprove ]);
+    }
+
+    public function discard(Request $request)
+    {
+        $this->authorize('viewAny', Certification::class);
+        $requestData = $request->json()->all();
+        $certId = $requestData['certId'];
+
+        $certificationToDelete = Certification::find($certId);
+
+        $userId = $certificationToDelete->user_id;
+        // Delete uploaded files due to GDPR
+        $this->deleteFolderByUserId($userId);
+
+        // Delete the certification request to let the user try again
+        $certificationToDelete->delete();
+
+        return response()->json(['message' => 'Discard']);
+    }
+
+    public function removeFiles(Request $request)
+    {
+        $userId = $request->json()->all()['userId'];
+
+        try{
+            $this->deleteFolderByUserId($userId);
+            return response()->json(['message' => "Removed"]);
+        }
+        catch(\Exception $ex)
+        {
+            return response()->json(['message' => $ex]);
+        }       
+    }
+
+    private function deleteFolderByUserId($userId)
+    {
+        $folderPath = 'uploads/' . $userId;
+
+        if (Storage::disk('public')->exists($folderPath)) {
+            Storage::disk('public')->deleteDirectory($folderPath);
+        }
     }
 }

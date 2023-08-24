@@ -164,11 +164,19 @@ return [
     */
 
     'custom' => [
+
         'company_id' => [
+            'size' => [
+                'string' => 'A cégjegyzékszámnak 12 karakternek kell lennie!'
+            ],
             'unique' => 'Ezzel a cégjegyzékszámmal már regisztráltak!',
         ],
         'company_tax_number' => [
+            'between' => 'Az adószámnak 10 vagy 13 karakternek kell lennie!',
             'unique' => 'Ezzel az adószámmal már regisztáltak!'
+        ],
+        'email' => [
+            'unique' => 'Ezzel az email címmel már regisztráltak!'
         ]
     ],
 

@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CertificationController;
+use App\Http\Controllers\EmailController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -36,4 +37,14 @@ Route::group([
     Route::get('/queryCert', [CertificationController::class, 'query']);
     Route::get('/hasCertRequest', [CertificationController::class, 'userRequestedCert']);
     Route::get('/all', [CertificationController::class, 'all']);
+    Route::post('/approve', [CertificationController::class, 'approve']);
+    Route::post('/discard', [CertificationController::class, 'discard']);
+    Route::post('/removeFiles', [CertificationController::class, 'removeFiles']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'contact'
+], function ($router) {
+    Route::post('/', [EmailController::class, 'send']);
 });
